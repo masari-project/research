@@ -1,0 +1,82 @@
+\documentclass{article}
+\usepackage{listings}
+\author{cryptochangements}
+\date{\today}
+
+\begin{document}
+\noindent\Large WWHM Difficulty Adjustment Algorithm in Masari
+
+\small\noindent Author: Cryptochangements
+
+\noindent\today
+\begin{abstract}
+This paper details the
+cryptocurrency Masari's implementation
+and transition to a Weighted-Weighted
+Harmonic Mean difficulty adjustment
+algorithm to smoothly adjust its difficulty
+target so that it maintains a steady 2 minute
+block time. The original idea for this
+algorithm comes from Tom Harold and
+was modified by Scott Roberts. The original C++
+implementation was done by Thaer
+Khawaja of the Masari Core Team. This
+implementation has since been adopted
+by several other cryptocurrency projects
+and has since paved the way for other
+difficulty adjustment algorithms such as
+LWMA.
+\end{abstract}
+
+\section{Introduction}
+Cryptocurrencies need to
+constantly adjust their difficulty in order to match the ever changing size of the
+network. However, the original
+implementations of cryptocurrency
+difficulty adjustment algorithms used in
+older cryptocurrencies such as Bitcoin Core or Bytecoin,
+the original CryptoNote reference
+implementation, are rather naive and
+adjust slowly. Because of this slow
+adjustment, an attacker with a large
+portion of the network's hashrate can take
+advantage of this latency by mining with a
+large amount of compute power such that
+the current network difficulty is easy for
+them and can flash mine several blocks in
+rapid succession until difficulty finally
+adjusts. Masari suffered this kind of
+attack in its early days of development
+and as a result, the Masari developers
+worked with Zawy to develop a Weighted-Weighted Harmonic Mean (WWHM)
+difficulty adjustment algorithm which
+would allow Masari to adjust its difficulty
+much quicker and prevent this kind of
+attack.
+
+\section{WWHM In Theory}
+A Weighted-Weighted
+Harmonic Mean based algorithm weighs
+newer solved blocks more heavily than
+older solved blocks when calculating
+difficulty to provide a more accurate
+estimation of the network's conditions in
+the near future.
+\subsection{The Algorithm}
+The only data
+from the blockchain that the algorithm
+requires is the timestamps ($T_{i}$) and
+difficulties ($D_{i}$) from the most recent
+blocks within a specified block window (w)
+on the blockchain. In Masari $w = 60$ but it can be changed based on the necessities of the users of this algorithm. The target in seconds (c), in Masari's case 120, is also a parameter of this function. The first step is to get
+the solvetimes ($S_{i} | i = 1 ... w$) for the blocks
+within the block window which can be
+expressed as ($S_{i}$ = $T_{i}$ - $T_{i-1}$). Next the sum of the weighted solvetimes (H) is calculated. Solvetimes are weighted by multiplying the solvetime by its index in the series so that later elements in the series are weighted heavier. This can be expressed as: 
+$$H = \sum_{i=1}^{w} S_{i}\cdot i$$
+The constant k is also used which will be defined as $k = (w+1)/2\cdot c$ .
+The difficulties within the last w blocks ($d$) also need to be summed such that $$d = \sum_{i=1}^{w}D_i$$
+
+Finally, the next difficulty can be calculated by multiplying the sum of the previous difficulties by k and then dividing by the harmonic mean.
+ $$d\cdot k / H$$
+ 
+\end{document}
