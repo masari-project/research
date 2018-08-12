@@ -48,7 +48,7 @@ rapid succession until difficulty finally
 adjusts. Masari suffered this kind of
 attack in its early days of development
 and as a result, the Masari developers
-worked with Zawy to develop a Weighted-Weighted Harmonic Mean (WWHM)
+worked with Scott Roberts to develop a Weighted-Weighted Harmonic Mean (WWHM)
 difficulty adjustment algorithm which
 would allow Masari to adjust its difficulty
 much quicker and prevent this kind of
@@ -76,7 +76,34 @@ $$H = \sum_{i=1}^{w} S_{i}\cdot i$$
 The constant k is also used which will be defined as $k = (w+1)/2\cdot c$ .
 The difficulties within the last w blocks ($d$) also need to be summed such that $$d = \sum_{i=1}^{w}D_i$$
 
-Finally, the next difficulty can be calculated by multiplying the sum of the previous difficulties by k and then dividing by the harmonic mean.
+Finally, the next difficulty can be calculated by multiplying the sum of the previous difficulties by k and then dividing by the sum of the weighted solvetimes.
  $$d\cdot k / H$$
+ 
+\section{Implementation}
+\subsection{Pseudo-code}
+\lstset {language=C}
+\begin{lstlisting}
+#define BLOCK_WINDOW 60;
+
+function getNextDifficulty(timestamps, difficulties, target_seconds) {
+  for (i = 1; i < BLOCK_WINDOW; i++) {
+    if (timestamps[i-1] >= timestamps[i])
+      solvetime = 1;
+    else
+      solvetime = timestamps[i] - timestamps[i];
+    if (solvetime > target_seconds * 10)
+      solvetime = target_seconds * 10;
+    weighted_solvetimes += solvetime * i;
+    difficulties_sum += difficulties[i];
+  }
+  min_timespan = target_seconds * BLOCK_WINDOW / 2;
+  if (weighted_solvetimes < min_timespan)
+    weighted_solvetimes = min_timespan;
+  
+  target = (BLOCK_WINDOW + 1) / 2 * target_seconds;
+  return difficulties_sum / target * weighted_solvetimes;
+}
+
+\end{lstlisting}
  
 \end{document}
