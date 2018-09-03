@@ -93,7 +93,7 @@ Finally, the next difficulty can be calculated by multiplying the sum of the pre
 
 function getNextDifficulty(timestamps, difficulties, target_seconds) {
   for (i = 1; i < BLOCK_WINDOW; i++) {
-    solvetime = timestamps[i] - timestamps[i];
+    solvetime = timestamps[i] - timestamps[i-1];
     if (solvetime > target_seconds * 10)
       solvetime = target_seconds * 10;
     weighted_solvetimes += solvetime * i;
