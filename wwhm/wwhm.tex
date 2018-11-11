@@ -104,7 +104,7 @@ function getNextDifficulty(timestamps, difficulties, target_seconds) {
     weighted_solvetimes = min_timespan;
   
   target = (BLOCK_WINDOW + 1) / 2 * target_seconds;
-  return difficulties_sum / target * weighted_solvetimes;
+  return difficulties_sum * target / weighted_solvetimes;
 }
 
 \end{lstlisting}
