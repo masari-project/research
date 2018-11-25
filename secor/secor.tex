@@ -37,7 +37,7 @@ This scenario is allowed at $h+1$ when there are two candidate top blocks $\pres
 \subsubsection{Correct Uncle Reference}
 The computed hash that represents new top nephew block $\prescript{a}{m}v_h^n$ must include in it the hash of uncle $hash(v_{h-1}^a)$ to ensure that the reward given to to the uncle is valid relative to its coinbase output. The uncle coinbase reward $r^a$ must be a defined constant fraction of the original amount in order to disincentivize adversarial uncle mining, and a fraction must be rewarded to the nephew reward $r^n$.
 \subsubsection{Near Time Constraint}
-In order to avoid any potential time warp attacks in the set of timestamps, the uncle block's timestamp $t_a$ must be a defined delta from the parent timestamp $t_m$ that is reasonable relative to block propagation statistics - this assumes the clock drift in nodes of the network are minimal, and is only to be enforced with a supporting block emission rate T (i.e. the delta with for T = 60 could be be $\vert t_a - t_m \vert < T/4$ which is sufficient given block propagation delays).
+In order to avoid any potential time warp attacks in the set of timestamps, the uncle block's timestamp $t_a$ must be within a defined delta from the parent timestamp $t_m$ that is reasonable relative to block propagation statistics - this assumes the clock drift in nodes of the network are minimal, and is only to be enforced with a supporting block emission rate T (i.e. the maximum delta for T = 60 could be $\vert t_a - t_m \vert < T/4$ which is sufficient given block propagation delays).
 \section{Features of a SECOR Enabled Network}
 \subsection{Faster Block Emission Rates.}
 \subsubsection{15 Second Blocks.}
