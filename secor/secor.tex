@@ -2,6 +2,9 @@
 \usepackage[top=1.00in, bottom=1.00in, left=1.00in, right=1.00in]{geometry}
 \usepackage{listings}
 \usepackage{mathtools}
+\usepackage{tikz}
+\usepackage{float}
+\usetikzlibrary{shapes,arrows,graphdrawing,graphs}
 \usepackage[square,sort,comma,numbers]{natbib}
 \setlength{\bibsep}{0.0pt}
 
@@ -26,14 +29,66 @@
 Since the introduction of Bitcoin, the scalability of permissionless decentralized cryptocurrency systems has been put into question, with different on-chain and off-chain solution proposals introduced in the space. When looking at on-chain scalability protocols, block emission rates become very important as they're necessary for consensus. If blocks are emitted too quickly, the network will be unable to converge to a consistent global state. Conversely, if blocks are emitted too slowly, the network will be slow to update state and at scale will have the problem of very large blocks congesting the payloads being broadcasted; at some point the blocks become too large for consensus when propagation times exceed that of a given emission rate. To help with on-chain scalability, a protocol such as SECOR is needed for achieving an optimal emission rate with security measures in place to maintain consensus. When implemented, it would in turn deliver faster blocks and higher network security as it takes advantage of what would otherwise be stale orphaned blocks not accepted into the network.
 
 \section{Simple Extended Consensus Resolution (SECOR)}
-We define the blockchain as a directed acyclic graph $G = (V, E)$, containing the active main chain and the set of all alternative chains. The main chain corresponds to the max weighted path from the genesis block $v_0$ to the latest block at $v_h$, with $h$ representing the current chain height at the max weighted path of G, $W = \sum_{i=0}^{h} weight(v_i)$. The weight of a block $v_i$ corresponds to the computed difficulty for mining it plus the difficulty of a mined uncle. An uncle mined on the main chain is an alternative block $v_{h-1}^a$ with a sibling $v_{h-1}^m$ on the main chain, $a \neq m$, distinct solutions at height $h-1$, and a nephew block $\prescript{a}{m}v_h^n$ is referencing the uncle $a$ with its parent $m$ (notation: $\prescript{uncle}{parent}v_{height}^{current\_block}$).
+We define the blockchain as a directed acyclic graph $G = (V, E)$, containing the active main chain and the set of all alternative chains, with each vertex $v$ following the notation $\prescript{uncle}{parent}v_{height}^{current\ block}$. The main chain corresponds to the max weighted path W from the genesis block $v_0$ to the latest block at $v_h$, with $h$ representing the current chain height at the max weighted path of G, where $W = \sum_{i=0}^{h} weight(v_i)$. The weight of a block $v_i$ corresponds to the computed difficulty for mining it plus the difficulty of a mined uncle. An uncle mined on the main chain is an alternative block $v_{h-1}^a$ with a sibling $v_{h-1}^m$ on the main chain, $a \neq m$, distinct solutions at height $h-1$, and a nephew block $\prescript{a}{m}v_h^n$ is referencing the uncle $a$ with its parent $m$.
 \subsection{Properties of a Valid SECOR Uncle}
 \subsubsection{Common Ancestry}
 At least one of these two cases must be present for a valid uncle.
+
 \paragraph{Direct Ancestry.}
 The grandparent $v_{h-2}^{\gamma}$ of candidate nephew block $v_h$ must be the same direct ancestor reference in parent $v_{h-1}^m$ and uncle $v_{h-1}^a$.
 \paragraph{Extended Ancestry.}
 This scenario is allowed at $h+1$ when there are two candidate top blocks $\prescript{a}{m}v_h^i$ and $\prescript{m}{a}v_h^j$, $i \neq j$, where the parent of $v^i$ is the uncle $v^j$, the parent of $v^j$ is the uncle of $v^i$, and the grandparent $\gamma$ is the same direct ancestor of those two blocks. This double reference ensures these are publicly known alternative paths, and by direct ancestry to grandparent $\gamma$ it ensures this uncle mining case for the active main chain is publicly known.
+
+\begin{figure}[H]
+\begin{tikzpicture}[>=latex, <->]
+
+  \newcommand{\nodesize}{12mm}
+  \newcommand{\nodedist}{20mm}
+  % Normal Ancestry Case
+  \node[circle, node distance =5cm, draw=none] (direct) {\textit{Direct Ancestry}};
+  \node[circle, draw, minimum size=\nodesize, below of=direct] (rem) {$\ldots$};
+  \node[circle, draw, minimum size=\nodesize, node distance=\nodedist, below of=rem] (grandparent) {$v_{h-2}^{\lambda}$};
+  \node[circle, draw, minimum size=\nodesize, node distance=\nodedist, below of=grandparent] (parent) {$v_{h-1}^m$};
+  \node[circle, draw, minimum size=\nodesize, node distance=\nodedist, right of=parent] (uncle) {$v_{h-1}^a$};
+  \node[circle, draw, minimum size=\nodesize, node distance=\nodedist, below of=parent] (nephew) {$v_h^n$};
+
+  \draw (nephew) edge[->] (parent);
+  \draw (nephew) edge[->, dashed] (uncle);
+  \draw (uncle) edge[->] (grandparent);
+  \draw (parent) edge[->] (grandparent);
+  \draw (grandparent) edge[->] (rem);
+
+  % Extended Ancestry Case
+  \node[circle, draw=none, node distance=5cm,right of=direct] (extended) {\textit{Extended Ancestry}};
+  \node[circle, draw, minimum size=\nodesize, below of=extended] (erem) {$\ldots$};
+  \node[circle, draw, minimum size=\nodesize, node distance=\nodedist, below of=erem] (egrandparent) {$v_{h-2}^{\lambda}$};
+  \node[circle, draw, minimum size=\nodesize, node distance=\nodedist, below of=egrandparent] (eparent) {$v_{h-1}^m$};
+  \node[circle, draw, minimum size=\nodesize, node distance=\nodedist, right of=eparent] (euncle) {$v_{h-1}^a$};
+  \node[circle, draw, minimum size=\nodesize, node distance=\nodedist, below of=eparent] (enephew) {$v_h^n$};
+  \node[circle, draw, minimum size=\nodesize, node distance=\nodedist, below of=euncle] (enephewalt) {$v_h^b$};
+  \node[circle, draw, minimum size=\nodesize, node distance=\nodedist, below of=enephew] (etop) {$v_{h+1}$};
+
+  \draw (etop) edge[->] (enephew);
+  \draw (etop) edge[->, dashed] (enephewalt);
+  \draw (enephewalt) edge[->] (euncle);
+  \draw (enephewalt) edge[->, dashed] (eparent);
+  \draw (enephew) edge[->] (eparent);
+  \draw (enephew) edge[->, dashed] (euncle);
+  \draw (euncle) edge[->] (egrandparent);
+  \draw (eparent) edge[->] (egrandparent);
+  \draw (egrandparent) edge[->] (erem);
+
+  % Legend
+  \node[draw=none, node distance=4cm, left of=rem] (lpr){};
+  \node[draw=none, left of=lpr] (lpl) {};
+  \node[draw=none, node distance=2mm, below of=lpr] (lur) {};
+  \node[draw=none, left of=lur] (lul) {};
+
+  \draw[->] (lpl) -- (lpr) node[right] {\scriptsize{parent}};
+  \draw[->, dashed] (lul) -- (lur) node[right] {\scriptsize{uncle}};
+\end{tikzpicture}
+\caption{SECOR Ancestry Cases}
+\end{figure}
 \subsubsection{Correct Uncle Reference}
 The computed hash that represents new top nephew block $\prescript{a}{m}v_h^n$ must include in it the hash of uncle $hash(v_{h-1}^a)$ to ensure that the reward given to to the uncle is valid relative to its coinbase output. The uncle coinbase reward $r^a$ must be a defined constant fraction of the original amount in order to disincentivize adversarial uncle mining, and a fraction must be rewarded to the nephew reward $r^n$.
 \subsubsection{Near Time Constraint}
