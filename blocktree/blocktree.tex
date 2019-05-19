@@ -1,0 +1,59 @@
+\documentclass{article}
+\usepackage[top=1.00in, bottom=1.00in, left=1.00in, right=1.00in]{geometry}
+\usepackage{listings}
+\usepackage{mathtools}
+\usepackage{tikz}
+\usepackage{float}
+\usetikzlibrary{shapes,arrows,graphdrawing,graphs}
+\usepackage[square,sort,comma,numbers]{natbib}
+\setlength{\bibsep}{0.0pt}
+
+\begin{document}
+\begin{center}
+  \textbf{CryptoNote Blocktree: Partially Asynchronous Metablock Consensus}\\
+  \vspace{5mm}
+
+  {\small
+    Thaer Khawaja\\
+    thaer.khawaja@gmail.com\\
+    www.getmasari.org\\
+  }
+  \vspace{5mm}
+\end{center}
+
+\begin{abstract}
+One of the biggest problems to Blockchain scalability is block size, where too large a block will have propagation time and centralization concerns, while one too small will cause a network's failure to converge on a main chain. In practice, one can argue a lower bound of approximately 15 seconds, given proper management of orphaned blocks and a small upper bound on block size \cite{khawaja}. Therefore, in order to increase transaction throughput while maintaining the secure concept of a Proof of Work (PoW) block in a permissionless decentralized network, one must be able to mine multiple blocks in parallel. This paper proposes Blocktree, a tree-partitioned structure that would fundamentally extend that of the Blockchain's linear nature.
+\end{abstract}
+
+\section{Introduction}
+In order to scale a permissionless and decentralized network securely, we take advantage of a property in CryptoNote coins called the Key Image, a globally unique key that ensures an output cannot be spent more than once\cite{saberhagen}. This same property will be the underlying basis behind the Blocktree scaling proposal, using what we will be defining as the Metablock, showing how a Blocktree can be derived in a way that would maximize transaction throughput while maintaining resilience to adversarial attacks.
+\section{Metablock Consensus Resolution}
+We define the blocktree as a depth balanced tree, $T = (V, E, M)$, where $(V,E)$ corresponds to vertices and edges in $k$ parallel subchains, where $k$ is the width of the tree at any depth $d$, and $M$ is the set of metablocks defined at those depths. Given a width $k$ at a given depth $d$, metablock $m_d$ represents the $k$ blocks at that depth as the hash of the PoW hashes, $m_d = Hash(v_j^d,v_{j + 1}^d,\ldots,v_{j+k}^d)$.
+\subsection{Asynchronous Consensus}
+The blocktree is balanced when the depth of connected edges from the genesis block root node to any top block subchain leaf node is at most 1 higher than the subchain top block depth, which will be the asynchronization factor. Metablocks are calculated retroactively when mining at depth $d+1$, where a given subchain block header defines the blocks it's observing at $d$ in order to mine at $d+1$. This asynchronization factor enforces the balanced tree requirement, since miners would need to converge on lagging subchains in order to be able to mine on any of the subchains at $d+1$.
+\subsection{Difficulty Weight Adjustment}
+The difficulty calculation would occur over $m_d$ depths, using sum of the $k$ corresponding block solve times as the input, and the per $v_j^d$ block difficulty would be $W_s(v_j^d) = W(m_d) / k$. Weight $W$ is used in this case to distinguish from difficulty in a similar manner to weights defined for SECOR\cite{khawaja}.
+\section{Asynchronous Subchains}
+Using metablocks, it allows us to partition the traditional blockchain model into partially asynchronous parallel subchains $S = (s_0, s_1, \ldots, s_{k-1})$ while maintaining a balanced tree that is resistant to adversarial attacks. At every depth $d$, each subchain top block has to reference the other $k-1$ subchains via $m_{d-1}$; the base case reduces to a regular blockchain where width $k = 1$, depth $d$ is the same as the height, and the metabblock is equivalent to a parent reference $v_{d-1}$. When $k > 1$, each subchain $s \in S$ is freely able to mine independent of other subchains, and the partitioned transactions they're able to mine directly correlate to their width index in the tree. In the case of CryptoNote\cite{saberhagen}, the partitioning scheme would occur on the key image which ensures that no double spend occurs across subchains. Each subchain would have with it a partition index, which will be necessary for identifying valid transactions.
+\subsection{Alternative Metablocks}
+Since metablocks are retroactively defined given arbitrary top blocks from the subchain set $S$, we can get cases where one miner is using an alternative subchain $s_i$ and therefore a different metablock; this case has a higher likelihood when no block has yet to be mined at $d+1$. In this situation, including mid-mined top blocks at any given depth, the alternative subchain $s_i^\prime$ would replace $s_i$ as the main subchain, resolving the consensus resolution conflict as it would be the metablock with the most cumulative difficulty weight.
+\section{Partitioned Transactions}
+In order to prevent double spends in these asynchronous subchains, transactions need to be partitioned by the key image so that the subchains are disjoint in their block content. To achieve this, each transaction's outs must belong to a single partition. In the base case where the tree width is 1, a regular blockchain, all key images belong to that partition. In cases of n subchain partitions where $n \geq 2$, modulo arithmetic would indicate which subchain a key image is allowed to be mined in. This has the side effect of sometimes needing multiple transactions when it would've otherwise been a single transaction. As long as the partially asynchronous height limit of the tree is less than the minimum number of blocks needed to unlock a transaction, ring members shouldn't be affected when forming the transaction, where stealth addresses do not need to be partitioned. If a key image was mined on more than one subchain, it would fail consensus due to the partitioning constraint, which continues to ensure that an output is spent only once through the key image without any further modifications.
+\section{Dynamic Scaling}
+Scaling the blocktree would be based on modulating the subchain width $k$ with respect to transaction throughput given a scaling protocol. For instance, picking $2^\sigma$ as our scaling function, it allows for a structured re-partitioning. The base case is $k = 2^0 = 1$, where it's in a regular blockchain state. For $k > 1$ when scaling up, parent of a new top block $v_j^{d+1}$ at $s_i^\prime$ would be from the old subchain at $s_{\lfloor i / 2\rfloor}$, and when scaling down, the parent of $s_i^\prime$ would be $Hash_d(s_{2i}, s_{2i + 1})$. The partition function itself would also be part of the consensus protocol, as it would enforce a uniform distribution of the transactions and prevents subchain double spends.
+\section{Conclusion}
+This proposal resolves the transaction throughput issue in permissionless cryptocurrencies, while maintaining the same PoW blockchain properties that maintain its security. This solution doesn't address subchain observation or storage requirements, as those can be tackled independently. For example, with respect to subchain observation, one can research an approach that ties a wallet's address (or subaddress) to a single subchain, which could allow partial observation with cheaper storage and compute costs. The Blocktree protocol, coupled with further advancements in reducing size complexity in cryptographic proofs, allows for scalable and high throughput real world use case applications.
+
+\begin{thebibliography}{999}
+  \bibitem{saberhagen}
+  Saberhagen, Nicolas.
+  \newblock {\em CryptoNote v 2.0}
+  \newblock https://cryptonote.org/whitepaper.pdf (2013)
+
+  \bibitem{khawaja}
+  Khawaja, Thaer.
+  \newblock {\em Simple Extended Consensus Resolution}
+  \newblock https://getmasari.org/secor.pdf (2018)
+\end{thebibliography}
+
+\end{document}
